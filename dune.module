@@ -1,0 +1,10 @@
+################################
+# Dune module information file #
+################################
+
+#Name of the module
+Module: proba
+Version: 1.0
+Maintainer: www
+#depending on
+Depends: dune-common dune-geometry dune-uggrid dune-grid dune-istl dune-alugrid dune-typetree dune-localfunctions dune-functions dune-pdelab
