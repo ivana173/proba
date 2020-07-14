@@ -4,7 +4,7 @@
 #include "bctype.hh"
 /** Metoda artificijelnog rješenja:  Koeficijenti za zadaću :
  *
- *   - div( grad u) + a(x) grad u = f(x)   u \Omega
+ *   -0.01 div(C grad u) + b(x) grad u = f(x)   u \Omega
  *                   u = g(x)   na \Gamma_D\subseteq\partial\Omega
  *        - grad u . n = j(x)   na \Gamma_N = \partial\Omega\setminus\Gamma_D
  *
@@ -96,7 +96,7 @@ double laplace_exact(Dune::FieldVector<double, dim> const & glob){
 // Reakcijski koeficijent. Koeficijent a(x) u operator.hh datoteci.
 template <int dim>
 double react_coeff(Dune::FieldVector<double, dim> const & glob){
-    return 100.0;
+    return 1.0;
 }
 
 // Desna strana diferencijalne jednadžbe. Za jednadžbu vidjeti operator.hh datoteku.
