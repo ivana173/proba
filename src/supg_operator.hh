@@ -93,13 +93,13 @@ public:
           gradu.axpy(x(lfsu,i),gradphi[i]);
 
 
-        const std::array< unsigned int, dim > order = {2,2};
-        //std::vector<Dune::FieldVector<Dune::PDELab::WeightedVectorAccumulationView<Dune::PDELab::LocalVector<double,Dune::PDELab::AnySpaceTag,double>>,1>> partial_phi;
-        //typedef Dune::LocalBasisTraits<LFSU,dim,Dune::FieldVector<LFSU,dim,R,1,Dune::FieldVector<R,1>,Dune::FieldMatrix<R,1,dim>> 	Traits;
-        typedef typename Dune::QkLocalBasis<LFSU,R,1,dim>::Traits Traits;
+ //       const std::array< unsigned int, dim > order = {2,2};
+ //       //std::vector<Dune::FieldVector<Dune::PDELab::WeightedVectorAccumulationView<Dune::PDELab::LocalVector<double,Dune::PDELab::AnySpaceTag,double>>,1>> partial_phi;
+ //       //typedef Dune::LocalBasisTraits<LFSU,dim,Dune::FieldVector<LFSU,dim,R,1,Dune::FieldVector<R,1>,Dune::FieldMatrix<R,1,dim>> 	Traits;
+ //       typedef typename Dune::QkLocalBasis<LFSU,R,1,dim>::Traits Traits;
 
-       // typename Traits::DomainType in = phi;
-        std::vector<typename Traits::RangeType> partial_phi;
+   //    // typename Traits::DomainType in = phi;
+   //     std::vector<typename Traits::RangeType> partial_phi;
 
         Dune::QkLocalBasis<LFSU,R,1,dim>::partial(order,phi,partial_phi);
 
@@ -115,7 +115,7 @@ public:
 
         for (std::size_t i=0; i<lfsu.size(); ++i)
          //std::cout << "gradu: " << gradu << "\nphi(i): " << phi[i] << "\ngradphi(i): " << gradphi[i] << std::endl;
-          r.accumulate(lfsu, i, (-eps*C*(gradu*gradphi[i]) /*- eps*C*laplaceu*ro*b*gradphi[i]*/   + b*phi[i]*gradu - f*phi[i]) * factor);
+          r.accumulate(lfsu, i, (-eps*C*(gradu*gradphi[i]) - eps*C*laplace_exact(qpoint)*ro*b*gradphi[i]   + b*phi[i]*gradu - f*phi[i]) * factor);
       }
   }
 
