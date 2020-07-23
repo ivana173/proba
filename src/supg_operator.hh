@@ -41,6 +41,7 @@ public:
   enum { doAlphaVolume = true };    // alpha_volume
   enum { doAlphaBoundary = true };  // alpha_boundary
   using  LocalBasis = typename FEM::Traits::FiniteElementType::Traits::LocalBasisType ;
+  using  RangeType  = typename LocalBasis::Traits::RangeType;  // Tip baznih funkcija (skalar)
 
   SUPGLocalOperator(const BCType& bctype_, // boundary cond.type
                          const FEM & fem_,
@@ -92,19 +93,45 @@ public:
         for (std::size_t i=0; i<lfsu.size(); ++i)
           gradu.axpy(x(lfsu,i),gradphi[i]);
 
+      // kvadrati komponenata od jac
+       auto jac2 = jac;
+       for (std::size_t i=0; i<lfsu.size(); i++)
+           for (std::size_t j=0; j<lfsu.size(); j++)
+               jac2[i][j] = jac[i][j]*jac[i][j];
 
- //       const std::array< unsigned int, dim > order = {2,2};
- //       //std::vector<Dune::FieldVector<Dune::PDELab::WeightedVectorAccumulationView<Dune::PDELab::LocalVector<double,Dune::PDELab::AnySpaceTag,double>>,1>> partial_phi;
- //       //typedef Dune::LocalBasisTraits<LFSU,dim,Dune::FieldVector<LFSU,dim,R,1,Dune::FieldVector<R,1>,Dune::FieldMatrix<R,1,dim>> 	Traits;
- //       typedef typename Dune::QkLocalBasis<LFSU,R,1,dim>::Traits Traits;
 
-   //    // typename Traits::DomainType in = phi;
-   //     std::vector<typename Traits::RangeType> partial_phi;
+        // OVDJE PRETPOSTAVLJAM DA TREBATE IZRAČUNATI LAPLACE APROKSIMATIVNOG RJEŠENJA
+        std::vector<RangeType> laplace_uh; // TU TREBA SUMIRATI LAPLACE NUMERIČKOG RJEŠENJA
+        std::vector<RangeType> laplace_phihat;
+        {
+             std::vector<RangeType> partial_phihat;
+             std::array< unsigned int, dim > multiindex;
+             for(int i=0; i<dim; ++i){
+                  multiindex.fill(0.0);
+                  multiindex[i] = 2;    // RAČUNAMO    \partial^2 \hat{\phi}/\partial x_i^2
+                  // NA OVAJ NAČIN DOĐETE DO PARCIJALNIH DERIVACIJA BAZNIH FUNKCIJA
+                  lfsu.finiteElement().localBasis().partial(multiindex, qpoint.position(), partial_phihat);
+                  // TO JE IZRAČUNATO NA REFERENTNOM ELEMENTU. SADA TREBA IZVRŠITI TRANSFORMACIJU NA
+                  // FIZIČKI ELEMENT.
+             }
 
-        Dune::QkLocalBasis<LFSU,R,1,dim>::partial(order,phi,partial_phi);
+             laplace_phihat.resize(lfsu.size());
+             laplace_uh.resize(lfsu.size());
+
+             for (std::size_t i=0; i<lfsu.size(); i++)
+                 laplace_phihat[i] = jac2[0][0]*partial_phihat[i][0] + jac2[1][1]*partial_phihat[i][1];
+
+
+             for (std::size_t i=0; i<lfsu.size(); i++)
+                 laplace_uh[i] = x(lfsu,i)*laplace_phihat[i];
+               
+         }
+         
+         
+
 
         double f = 0.0;
-        double b = 1.0;
+        Gradient b; b[0]=b[1] = 1; //NA PRIMJER
         double eps = 0.01;
         double C = 1.0;
         double ro = 1.0;
@@ -114,8 +141,7 @@ public:
         double factor = qpoint.weight() * eg.geometry().integrationElement(qpoint.position());
 
         for (std::size_t i=0; i<lfsu.size(); ++i)
-         //std::cout << "gradu: " << gradu << "\nphi(i): " << phi[i] << "\ngradphi(i): " << gradphi[i] << std::endl;
-          r.accumulate(lfsu, i, (-eps*C*(gradu*gradphi[i]) - eps*C*laplace_exact(qpoint)*ro*b*gradphi[i]   + b*phi[i]*gradu - f*phi[i]) * factor);
+          r.accumulate(lfsu, i, (-eps*C*(gradu*gradphi[i]) - (eps*C*ro*(laplace_uh[i])*(b*gradphi[i])) + (b*gradu)*phi[i] - f*phi[i]) * factor);
       }
   }
 
